@@ -1,9 +1,10 @@
-import { serve } from "https://deno.land/std/http/server.ts"
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY')
+const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') //para segurança, usei uma variavel de ambiente pegada no supabase
 const ASAAS_API_URL = 'https://api.asaas.com/v3/customers'
 
+//cria um cliente Supabase com privilégios de administrador
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -12,7 +13,7 @@ const supabaseAdmin = createClient(
 serve(async (req) => {
   try {
     const { record } = await req.json()
-    
+    //mapeamento de dados
     const asaasData = {
       name: record.sfj_nome,
       cpfCnpj: record.sfj_cpf_cnpj, 
@@ -20,7 +21,7 @@ serve(async (req) => {
       mobilePhone: `${record.sfj_ddd}${record.sfj_fone.replace(/[^\d]/g, '')}`,
       externalReference: record.sfj_pessoa.toString(),
     }
-
+    //chamada http
     const response = await fetch(ASAAS_API_URL, {
       method: 'POST',
       headers: {
@@ -31,7 +32,7 @@ serve(async (req) => {
     });
 
     const asaasResult = await response.json()
-
+    //se der certo faz update 
     if (response.ok) { 
       const customerId = asaasResult.id 
 
@@ -54,9 +55,10 @@ serve(async (req) => {
 
         return new Response(JSON.stringify({ success: false, error: asaasResult }), { status: 500 })
       }
-
+      //se der errado deixa rastro do problema
   } catch (error) {
-    console.error('Erro na Edge Function:', error)
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    const err = error as Error
+    console.error('Erro na Edge Function:', err)
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
   }
 });
