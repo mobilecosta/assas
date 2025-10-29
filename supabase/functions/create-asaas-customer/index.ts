@@ -1,67 +1,64 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY')
-const ASAAS_API_URL = 'https://sandbox.asaas.com/api/v3/customers'
+const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') //para segurança, usei uma variavel de ambiente pegada no supabase
+const ASAAS_API_URL = 'https://api.asaas.com/v3/customers'
+
+//cria um cliente Supabase com privilégios de administrador
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+) 
 
 serve(async (req) => {
-  console.log("Webhook disparado! Novo registro recebido.");
   try {
-    const payload = await req.json()
-    const user = payload.record 
-
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Nenhum registro encontrado no payload' }),
-        { status: 400 }
-      )
-    }
-
-    if (!ASAAS_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'ASAAS_API_KEY não configurada nos secrets.' }),
-        { status: 500 }
-      )
-    }
-
-    // Mapeia os campos da tua tabela pro Asaas
+    const { record } = await req.json()
+    //mapeamento de dados
     const asaasData = {
-      name: user.sfj_nome,
-      email: user.sfj_email,
-      cpfCnpj: user.sfj_cpf_cnpj,
-      ddi: user.sfj_ddi,
-      phone: `${user.sfj_ddd}${user.sfj_fone}`,
-      externalReference: user.sfj_pessoa,
+      name: record.sfj_nome,
+      cpfCnpj: record.sfj_cpf_cnpj, 
+      email: record.sfj_email,
+      mobilePhone: `${record.sfj_ddd}${record.sfj_fone.replace(/[^\d]/g, '')}`,
+      externalReference: record.sfj_pessoa.toString(),
     }
-
-    // Faz o POST pro Asaas
+    //chamada http
     const response = await fetch(ASAAS_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'access_token': ASAAS_API_KEY,
+        'access_token': ASAAS_API_KEY!,
       },
       body: JSON.stringify(asaasData),
-    })
+    });
 
     const asaasResult = await response.json()
+    //se der certo faz update 
+    if (response.ok) { 
+      const customerId = asaasResult.id 
 
-    if (response.ok) {
-      console.log(' Cliente criado no Asaas:', asaasResult)
-      return new Response(
-        JSON.stringify({ success: true, customerId: asaasResult.id }),
-        { status: 200 }
-      )
-    } else {
-      console.error(' ERRO ASAAS:', asaasResult)
-      return new Response(
-        JSON.stringify({ success: false, error: asaasResult }),
-        { status: 500 }
-      )
-    }
+      await supabaseAdmin
+      .from('sfj0007000') 
+        .update({
+        asaas_customer_id: customerId,
+        asaas_status: 'ACTIVE',
+      })
+      .eq('sfj_pessoa', record.sfj_pessoa)
+
+      return new Response(JSON.stringify({ success: true, customerId }), { status: 200 })
+      } else {
+        console.error('ERRO ASAAS:', asaasResult)
+
+        await supabaseAdmin
+        .from('sfj0007000')
+        .update({ asaas_status: 'ERROR' })
+        .eq('sfj_pessoa', record.sfj_pessoa)
+
+        return new Response(JSON.stringify({ success: false, error: asaasResult }), { status: 500 })
+      }
+      //se der errado deixa rastro do problema
   } catch (error) {
-    console.error(' Erro na Edge Function:', error.message)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    })
+    const err = error as Error
+    console.error('Erro na Edge Function:', err)
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
   }
-})
+});
