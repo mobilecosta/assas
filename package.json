@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "axios": "^1.12.2"
+    "@supabase/supabase-js": "^2.77.0",
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.3"
   }
 }

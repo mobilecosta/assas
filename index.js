@@ -1,82 +1,95 @@
-const axios = require("axios");
-const API_KEY = "$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjkwMmE2NWVlLWJhNmItNGJmMC1iNjk1LTczNzU3ZTRkMjNiMzo6JGFhY2hfZGNkYjMyOWMtYmZlMS00ZjM2LWFlZDUtNzE4N2NlMWE5Nzhi";
+require('dotenv').config();
+const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
 
-// Dados simulados
-const dados = {
-    "public.sfj0007000": [
-        {
-            "sfj_nome": "Jfr Tecnologia E Sistemas Ltda - Epp",
-            "sfj_apelido": "Conceitho Tecnologia",
-            "sfj_ddd": "11",
-            "sfj_fone": "98951-8720",
-            "sfj_email": "fabio@conceitho.com",
-            "cpfCnpj": "12345678909"
-        }
-    ],
-    "public.se20007000": [
-        {
-            "se2_cep": "09295410",
-            "se2_ender": "Rua Coroados",
-            "se2_num": "315",
-            "sz9_municipio": "3547809",
-        }
-    ],
-    "public.san007001": [
-        {
-            "an_valor": "5.00",
-            "an_vencto": "2025-11-01",
-            "an_historico": "teste"
-        }
-    ]
+//variaveis de ambiente
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !ASAAS_API_KEY) {
+    console.error('Erro: faltam váriaveis do .env');
+    process.exit(1);
 }
 
-// Extraindo os dados necessários
-const cliente = dados["public.sfj0007000"][0];
-const endereco = dados["public.se20007000"][0];
-const cobranca = dados ["public.san007001"][0];
+//conexão com o supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Função para criar cliente e cobrança
-async function criarClienteCobranca() {
-    try {
-        const clienteResp = await axios.post(
-            "https://sandbox.asaas.com/api/v3/customers",
-            {
-                name: cliente.sfj_nome,
-                email: cliente.sfj_email,
-                phone: `${cliente.sfj_ddd}${cliente.sfj_fone.replace("-", "")}`,
-                address: endereco.se2_ender,
-                addressNumber: endereco.se2_num,
-                postalCode: endereco.se2_cep,
-                cpfCnpj: cliente.cpfCnpj,
-            },
-            { headers: { 
-                    access_token: API_KEY,
-                }, 
-            }
-        );
+//Função principal
+async function executarIntegracao() {
+    try{
+        console.log('Buscando dados no supabase')
 
-        // ID do cliente criado
-        const clienteId = clienteResp.data.id;
-        console.log("cliente criado:", clienteId);
+        const { data: clientes, error: erroClientes } = await supabase 
+            .from('sfj0007000')
+            .select('*');
 
-        const cobrancaResp = await axios.post(
-            "https://sandbox.asaas.com/api/v3/payments",
-            {
-                customer: clienteId,
-                billingType: "BOLETO",
-                dueDate: cobranca.an_vencto,
-                value: parseFloat(cobranca.an_valor),
-                description: cobranca.an_historico,
-            },
-            { headers: { access_token: API_KEY} }
-        );
+        const { data: enderecos, error: erroEnderecos } = await supabase
+            .from('se20007000')
+            .select('*');
 
-        // ID da cobrança criada
-        console.log("cobrança criada:", cobrancaResp.data.id);
-        } catch (error) {
-            console.error("erro:", error.response ? error.response.data : error.message);
+        const { data: cobrancas, error: erroCobrancas } = await supabase
+            .from('san0007001')
+            .select('*');
+        
+        if (erroClientes || erroEnderecos || erroCobrancas  ) {
+            console.error('Erro ao buscar dados:', erroClientes || erroEnderecos ||  erroCobrancas );
+            return;
         }
+
+        if (!clientes?.length || !enderecos?.length || !cobrancas?.length) {
+            console.log('Nenhum dado encontrado nas tabelas');
+            return;
+        }
+
+        console.log('dados carregador com sucesso!');
+        console.log(`Clientes: ${clientes.length} | Endereços: ${enderecos.length} | ${cobrancas.lenth}`);
+        
+        //pegando o primieiro registro
+        const cliente = clientes[0];
+        const endereco = enderecos[0];
+        const cobranca = cobrancas[0];
+
+        //montagem dos dados para o ASAAS
+        const payloadCliente = {
+            name: cliente.sfj_nome,
+            cpfCnpj: cliente.sfj_cpf_cnpj,
+            phone: `${cliente.sfj_ddd}${cliente.sfj_fone.replace('-', '')}`,
+            email: cliente.sfj_email,
+            address: endereco.se2_ender,
+            postalCode: endereco.se2_cep,
+        }
+        
+        console.log('Enviando Cliente para o Asaas...');
+        const clienteResp = await axios.post(
+            'https://sandbox.asaas.com/api/v3/customers',
+            payloadCliente,
+            { headers: { access_token: ASAAS_API_KEY } }
+        );
+
+        const clienteId = clienteResp.data.id;
+        console.log('cliente criado:', clienteId);
+
+        const payloadCobranca = {
+            customer: clienteId,
+            billingType: 'BOLETO',
+            dueDate: cobranca.an_vencto,
+            value: parseFloat(cobranca.an_valor),
+            description: cobranca.an_historico,
+        };
+
+        console.log('Criando cobrança no Asaas...');
+        const cobrancaResp = await axios.post(
+            'https://sandbox.asaas.com/api/v3/payments',
+            payloadCobranca,
+            { headers: { access_token: ASAAS_API_KEY } }
+        );
+
+        console.log('Cobrança Criada:', cobrancaResp.data.id);
+
+    } catch (erro) {
+        console.error('Erro Geral:', erro.response ? erro.response.data : erro.message );
     }
+}
 
-
-criarClienteCobranca();
+executarIntegracao();
