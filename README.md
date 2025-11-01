@@ -13,6 +13,6 @@ Certifique-se de que haja um novo usuario inserido na tabela do supabase. É est
 
 ## 2 - RODE O SCRIPT NODE (AGENDADOR.JS)
 
-Para que seja cadastrado o novo cliente inserido no supabase dentro do asaas, é necessário o "run" do código escrito no arquivo "agendador.js", responsável pela integração com a api. Basta escrever "node index.js" no terminal do projeto.
+Para que seja cadastrado o novo cliente inserido no supabase dentro do asaas, é necessário o "run" do código escrito no arquivo "agendador.js", responsável pela integração com a api. Basta escrever "node agendador.js" no terminal do projeto.
 
 (obs: a integração de novos usuários é feita a cada 1 minuto após o run)
