@@ -1,3 +1,5 @@
+//arquivos com dados mocados para testes locais
+
 const axios = require("axios");
 const API_KEY = "$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmJlOGMzOWFjLWIwMjUtNDFkYS04MTllLTQ4NmQ5Mzc1ZGI5NDo6JGFhY2hfYTEyODk3NTQtOTFjNS00NWNmLThmODYtMDEyYjFhZjY5YTM3";
 
