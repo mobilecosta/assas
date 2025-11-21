@@ -8,6 +8,7 @@ Repositorio com Exemplos de Consumo do ASSAS
 ## Dados de Acesso: sandbox.asaas.com
 ## User: murilo.carvalho.mcs@outlook.com / Password: Nomkun-6tewto-bekbyk 
 ## User: mobile.costa@gmail.com / Password: 303351@Wag
+## Token: $aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmQyODU3ZWQxLWNhMWMtNGVlOS1iMDhlLTBhNTY0ZmE1OTQzOTo6JGFhY2hfMjBjNmQ4N2YtNzYzYi00MzYyLWFmMDQtMmYyMjAxZGFmZGZh
 
 # MODO DE USAR
 ## 1 - DE INSERT DE UM NOVO CLIENTE NA TABELA SUPABASE
