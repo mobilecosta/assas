@@ -1,48 +1,44 @@
-// Configure o datasource
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE-URL")
+  url      = env("DATABASE_URL")
 }
 
-// Configurações do Prisma
-generator client {
-  provider = "prisma-client-js"
+model sfj0007000 {
+  a1_codcli     Int           @id @default(autoincrement())
+  sfj_nome      String
+  sfj_cpf_cnpj  String
+  sfj_cadastro  DateTime
+  sfj_tipo      Int
+  sfj_ddd       String?
+  sfj_fone      String?
+  sfj_email     String?
+  sfj_perfil    String?
+  sfj_situacao  Int
+
+  enderecos     se20007000[]
+  titulos       san0007001[]
 }
 
-// ======================
-//      MODELS
-// ======================
+model se20007000 {
+  id            Int       @id @default(autoincrement())
+  se2_ender     String
+  se2_cep       String
+  se2_vigencia  DateTime
+  sz9_municipio String
+  a1_codcli     Int
 
-// Tabela de Clientes
-model Cliente {
-  id         String           @id @default(uuid())
-  nome       String
-  documento  String?          // CPF/CNPJ
-  email      String?
-  telefone   String?
-  endereco   String?
-  criadoEm   DateTime         @default(now())
-  atualizadoEm DateTime       @updatedAt
-
-  // Relacionamento
-  titulos    TituloReceber[]
+  cliente       sfj0007000 @relation(fields: [a1_codcli], references: [a1_codcli], onDelete: Cascade)
 }
 
-// Tabela de Títulos a Receber
-model TituloReceber {
-  id           String     @id @default(uuid())
-  clienteId    String
-  numeroTitulo String
-  emissao      DateTime
-  vencimento   DateTime
-  valor        Decimal    @db.Decimal(12, 2)
-  pago         Boolean    @default(false)
-  dataPagamento DateTime?
-  observacao    String?
+model san0007001 {
+  id            Int       @id @default(autoincrement())
+  an_vencto     DateTime
+  an_valor      Decimal    @db.Decimal(12, 2)
+  an_historico  String?
+  an_codtit     String
+  an_emissao    DateTime
+  an_venctoreal DateTime
+  a1_codcli     Int
 
-  criadoEm     DateTime   @default(now())
-  atualizadoEm DateTime   @updatedAt
-
-  // Relação com Cliente
-  cliente      Cliente    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cliente       sfj0007000 @relation(fields: [a1_codcli], references: [a1_codcli], onDelete: Cascade)
 }
