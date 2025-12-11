@@ -1,9 +1,10 @@
 {
   "dependencies": {
-    "@prisma/client": "^6.19.0",
+    "@prisma/client": "^6.19.1",
     "@supabase/supabase-js": "^2.77.0",
     "axios": "^1.12.2",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "prisma": "^6.19.0"
