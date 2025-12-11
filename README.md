@@ -142,4 +142,33 @@ FROM novo_cliente;
 
 (obs: É possível alterar os valores do campo substituindo as informações do script acima por novos clientes).
 
+# informações Adicionais:
+
+Para o processo de cadastro de clientes através de requisições POST, a api do asaas precisa de algumas informações do cliente para que seja possível seu cadastro.
+As informações podem ser classificadas como Obrigatórias e opcional/Recomendadas. Todas as informações precisam ser enviadas para o sistema em formato de json.
+
+## Informações Obrigatórias: 
+
+```
+Nome completo do cliente (string)
+cpf/cnpj (string)
+```
+
+## Informações Recomendadas: 
+
+```
+Email
+phone
+MobilePhone
+PostalCode
+Adress
+AdressNumber
+Complement
+Province
+ExternalReference
+notificationDisabled
+PersonType
+```
+
+Um perfil de cliente com informações o torna copleto, abrindo mais opções de funcionalidades que possam ser feitas através da api.
 
